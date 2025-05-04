@@ -1,6 +1,6 @@
-# Bot de Discord con IA y Memoria
+# Bot de Discord con IA, Memoria y Juegos
 
-Un bot para Discord que responde automáticamente a menciones utilizando una IA compatible con OpenAI, con sistema avanzado de memoria y personalización de respuestas.
+Un bot para Discord que responde automáticamente a menciones utilizando una IA compatible con OpenAI, con sistema avanzado de memoria, personalización de respuestas y juegos interactivos.
 
 ## Características
 
@@ -11,6 +11,7 @@ Un bot para Discord que responde automáticamente a menciones utilizando una IA 
 - **Conciencia de contexto**: Tiene en cuenta el canal y conversaciones recientes
 - **Respuestas personalizadas**: Adapta sus respuestas según el perfil del usuario
 - **Resumen de conversaciones**: Puede resumir las últimas conversaciones del canal cuando se le solicita
+- **Juegos interactivos**: Juega a ajedrez y más juegos utilizando la IA
 - Configuración sencilla a través de un archivo JSON
 
 ## Requisitos previos
@@ -150,6 +151,46 @@ El bot incluye funcionalidades de moderación que solo pueden ser utilizadas por
 - **Duración personalizable**: Para la función de silenciar, puedes especificar la duración en minutos, horas o días (por defecto: 1 hora)
 - **Registro automático**: Todas las acciones de moderación se registran en el sistema de memoria del bot
 
+### Juegos interactivos
+
+El bot incluye un sistema de juegos que utiliza la API de IA para procesar y validar jugadas:
+
+- **Iniciar un juego**: Menciona al bot seguido del tipo de juego que quieres jugar:
+  ```
+  @BotIA jugar ajedrez
+  @BotIA juego de ajedrez
+  ```
+
+- **Jugar contra la IA o contra otros usuarios**:
+  - Para jugar contra la IA, simplemente inicia el juego sin mencionar a otro usuario
+  - Para jugar contra otro usuario, menciónalo al iniciar el juego:
+  ```
+  @BotIA jugar ajedrez @OtroUsuario
+  ```
+
+- **Hacer movimientos**:
+  - El bot acepta múltiples formatos de notación:
+    - Notación algebraica estándar: `e2e4`
+    - Con guión: `e2-e4`
+    - En lenguaje natural: `e2 hacia e4`
+
+- **Comandos durante el juego**:
+  ```
+  @BotIA me rindo
+  @BotIA abandono
+  @BotIA terminar juego
+  ```
+
+- **Juegos disponibles**:
+  - Ajedrez: Juego completo con todas las reglas del ajedrez incluyendo enroques, capturas al paso, y promociones
+  
+- **Características clave**:
+  - Tableros ASCII mejorados con anchura correcta
+  - Validación inteligente de jugadas a través de la API de IA
+  - Guardado automático de partidas en progreso
+  - Múltiples partidas simultáneas en diferentes canales
+  - Historial de movimientos integrado
+
 ### Comandos disponibles
 
 - **!configurar** - Permite a los administradores modificar la configuración del bot en tiempo real
@@ -179,7 +220,8 @@ Discord_Bot_Remake/
 ├── data/
 │   ├── users/            # Datos de usuario y análisis de personalidad
 │   ├── conversations/    # Historiales de conversación
-│   └── channels/         # Información de contexto de canales
+│   ├── channels/         # Información de contexto de canales
+│   └── games/            # Estados guardados de juegos en progreso
 ├── src/
 │   ├── index.js          # Punto de entrada principal
 │   ├── bot.js            # Configuración y funcionalidades del bot
@@ -187,7 +229,14 @@ Discord_Bot_Remake/
 │   ├── memory_manager.js # Sistema de gestión de memoria
 │   ├── user_analyzer.js  # Analizador de perfiles de usuario
 │   ├── context_manager.js # Gestor de contexto de canales
-│   └── data_storage.js   # Sistema de almacenamiento de datos
+│   ├── data_storage.js   # Sistema de almacenamiento de datos
+│   └── games/            # Sistema de juegos interactivos
+│       ├── game_manager.js  # Gestor principal de juegos 
+│       ├── utils/        # Utilidades comunes para juegos
+│       │   ├── base_game.js     # Clase base para todos los juegos
+│       │   └── board_renderer.js # Renderizado de tableros ASCII
+│       └── chess/        # Implementación del juego de ajedrez
+│           └── chess_game.js    # Lógica específica de ajedrez
 ├── package.json          # Dependencias del proyecto
 └── README.md             # Este archivo
 ```
