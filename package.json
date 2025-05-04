@@ -1,0 +1,26 @@
+{
+  "name": "discord_bot_remake",
+  "version": "1.0.0",
+  "description": "Bot de Discord que responde a menciones utilizando IA compatible con OpenAI",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "ai",
+    "ia",
+    "openai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "*",
+    "discord.js": "*",
+    "dotenv": "*",
+    "uuid": "^11.1.0"
+  }
+}
