@@ -281,14 +281,12 @@ async function generateConversationSummary(messages, channelName) {
         
         // Crear prompt para solicitar el resumen
         const summaryPrompt = `
-Por favor, genera un resumen completo y detallado de la siguiente conversación del canal "${channelName}". 
-Identifica los temas principales, participantes clave y cualquier decisión o conclusión importante. 
-Organiza el resumen de manera clara y concisa.
-
-Conversación:
+Conversación del canal "${channelName}":
 ${formattedMessages}
 
-Resumen:`;
+Por favor, resume lo que ha pasado en esta conversación de manera natural y conversacional, como si estuvieras contándoselo informalmente a alguien que acaba de unirse al canal.
+Evita usar formatos estructurados o listas de puntos. Usa un tono casual y fluido, como si estuvieras explicando lo sucedido a un amigo.
+`;
 
         // Configurar una solicitud específica para el resumen
         const requestData = {
@@ -296,14 +294,14 @@ Resumen:`;
             messages: [
                 {
                     role: "system",
-                    content: "Eres un asistente especializado en resumir conversaciones. Tu tarea es crear resúmenes detallados, organizados y claros de conversaciones, identificando puntos clave, participantes y conclusiones."
+                    content: "Eres un asistente conversacional experto en resumir situaciones de manera natural. Evitas formatos rígidos y estructurados, prefiriendo un tono casual y narrativo que fluye como una conversación normal."
                 },
                 {
                     role: "user",
                     content: summaryPrompt
                 }
             ],
-            temperature: 0.7,
+            temperature: 0.8, // Ligeramente mayor para más creatividad en la narración
             max_tokens: config.ia.max_tokens
         };
 

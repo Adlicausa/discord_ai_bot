@@ -15,6 +15,7 @@ const {
 const memoryManager = require('./memory_manager');
 const userAnalyzer = require('./user_analyzer');
 const contextManager = require('./context_manager');
+const gameManager = require('./games/game_manager');
 
 // Cargar configuración
 const configPath = path.join(__dirname, '../config/config.json');
@@ -48,10 +49,13 @@ const client = new Client({
 // Función para iniciar el bot
 function startBot() {
     // Evento cuando el bot está listo
-    client.on('ready', () => {
+    client.on('ready', async () => {
         console.log(`Bot conectado como ${client.user.tag}`);
         client.user.setActivity(config.bot.status, { type: ActivityType.Playing });
         console.log('Sistema de memoria e inteligencia inicializado');
+        
+        // Inicializar el sistema de juegos
+        await gameManager.initialize();
     });
 
     // Evento para procesar mensajes
@@ -240,12 +244,29 @@ function extractMessageCount(content) {
  */
 function detectBanRequest(content) {
     const lowercaseContent = content.toLowerCase();
+    
+    // Usar expresiones regulares con límites de palabra (\b)
     const banKeywords = [
-        'banea', 'banear', 'ban', 'expulsa permanentemente', 'prohibe el acceso',
-        'da ban a', 'quiero que banees', 'por favor banea'
+        /\bbanea\b/, /\bbanear\b/, /\bban\b/, /\bexpulsa permanentemente\b/, /\bprohibe el acceso\b/,
+        /\bda ban a\b/, /\bquiero que banees\b/, /\bpor favor banea\b/
     ];
     
-    return banKeywords.some(keyword => lowercaseContent.includes(keyword));
+    // Verificar contexto más específico usando patrones
+    const contextPatterns = [
+        /\bban(ea|ear)?\s+a\s+@/i, // "banea a @usuario"
+        /\bda\s+ban\s+a\s+@/i,     // "da ban a @usuario"
+        /\bprohib(e|ir)\s+acceso/i // "prohibe acceso"
+    ];
+    
+    // Si hay un patrón de contexto claro, es un comando seguro
+    for (const pattern of contextPatterns) {
+        if (pattern.test(lowercaseContent)) {
+            return true;
+        }
+    }
+    
+    // Si no, verificar palabras clave exactas
+    return banKeywords.some(keyword => keyword.test(lowercaseContent));
 }
 
 /**
@@ -255,12 +276,29 @@ function detectBanRequest(content) {
  */
 function detectKickRequest(content) {
     const lowercaseContent = content.toLowerCase();
+    
+    // Usar expresiones regulares con límites de palabra
     const kickKeywords = [
-        'kickea', 'expulsa', 'kick', 'saca a', 'echa a', 
-        'quiero que expulses', 'por favor expulsa'
+        /\bkickea\b/, /\bexpulsa\b/, /\bkick\b/, /\bsaca a\b/, /\becha a\b/, 
+        /\bquiero que expulses\b/, /\bpor favor expulsa\b/
     ];
     
-    return kickKeywords.some(keyword => lowercaseContent.includes(keyword));
+    // Patrones específicos de contexto
+    const contextPatterns = [
+        /\bexpulsa(r)?\s+a\s+@/i,  // "expulsa a @usuario"
+        /\bkick(ea)?\s+a\s+@/i,    // "kick a @usuario"
+        /\bsaca\s+a\s+@/i          // "saca a @usuario"
+    ];
+    
+    // Verificar patrones contextuales primero
+    for (const pattern of contextPatterns) {
+        if (pattern.test(lowercaseContent)) {
+            return true;
+        }
+    }
+    
+    // Luego verificar palabras clave exactas
+    return kickKeywords.some(keyword => keyword.test(lowercaseContent));
 }
 
 /**
@@ -270,12 +308,30 @@ function detectKickRequest(content) {
  */
 function detectMuteRequest(content) {
     const lowercaseContent = content.toLowerCase();
+    
+    // Usar expresiones regulares con límites de palabra
     const muteKeywords = [
-        'mutea', 'silencia', 'mute', 'quita voz a', 'remueve capacidad de hablar',
-        'quiero que silencies', 'por favor silencia'
+        /\bmutea\b/, /\bsilencia\b/, /\bmute\b/, /\bquita voz a\b/, 
+        /\bremueve capacidad de hablar\b/, /\bquiero que silencies\b/, 
+        /\bpor favor silencia\b/
     ];
     
-    return muteKeywords.some(keyword => lowercaseContent.includes(keyword));
+    // Patrones específicos de contexto
+    const contextPatterns = [
+        /\bsilencia(r)?\s+a\s+@/i,  // "silencia a @usuario"
+        /\bmute(ar|a)?\s+a\s+@/i,   // "mutea a @usuario"
+        /\bquit(a|ar)\s+voz\s+a\s+@/i // "quita voz a @usuario"
+    ];
+    
+    // Verificar patrones contextuales primero
+    for (const pattern of contextPatterns) {
+        if (pattern.test(lowercaseContent)) {
+            return true;
+        }
+    }
+    
+    // Luego verificar palabras clave exactas
+    return muteKeywords.some(keyword => keyword.test(lowercaseContent));
 }
 
 /**
@@ -575,8 +631,8 @@ async function processMention(message) {
                     // Generar resumen
                     const summary = await generateConversationSummary(messages, message.channel.name);
                     
-                    // Responder con el resumen
-                    await message.reply(`Aquí tienes un resumen de los últimos ${messages.length} mensajes:\n\n${summary}`);
+                    // Responder con el resumen de manera más natural
+                    await message.reply(`${summary}`);
                     
                     // Guardar la interacción en memoria
                     await memoryManager.saveMessage(userId, username, content, channelId, false);
@@ -595,7 +651,9 @@ async function processMention(message) {
             const kickRequest = detectKickRequest(content);
             const muteRequest = detectMuteRequest(content);
             
-            if (banRequest || kickRequest || muteRequest) {
+            // Solo procesar como solicitud de moderación si hay al menos otra mención además del bot
+            // O si se detecta un patrón contextual muy claro
+            if ((banRequest || kickRequest || muteRequest) && message.mentions.users.size > 1) {
                 message.channel.sendTyping();
                 
                 let moderationType;
@@ -610,7 +668,13 @@ async function processMention(message) {
                 return; // Terminar el procesamiento aquí
             }
             
-            // Si no es un resumen ni moderación, procesar como un mensaje normal
+            // Intentar procesar como comando de juego
+            const isGameCommand = await gameManager.handleGameCommand(message);
+            if (isGameCommand) {
+                return; // Si fue manejado como juego, terminar el procesamiento
+            }
+            
+            // Si no es un resumen, moderación o juego, procesar como un mensaje normal
             try {
                 // Obtener respuesta inicial
                 let response = await iaService.sendMessageToAI(content, userProfile, channelContext);
