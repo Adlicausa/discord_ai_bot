@@ -1,4 +1,4 @@
-# Bot de Discord con IA, Memoria y Juegos
+# Discord AI Bot
 
 Un bot para Discord que responde automáticamente a menciones utilizando una IA compatible con OpenAI, con sistema avanzado de memoria, personalización de respuestas y juegos interactivos.
 
